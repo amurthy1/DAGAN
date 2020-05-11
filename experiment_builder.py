@@ -216,59 +216,59 @@ class ExperimentBuilder(object):
                                     total_g_val_loss_std))
 
 
+                    if e % 10 == 0:
+                      sample_generator(num_generations=self.num_generations, sess=sess, same_images=self.same_images,
+                                       inputs=x_train_i,
+                                       data=self.data, batch_size=self.batch_size, z_input=self.z_input,
+                                       file_name="{}/train_z_variations_{}_{}.png".format(self.save_image_path,
+                                                                                          self.experiment_name,
+                                                                                          e),
+                                       input_a=self.input_x_i, training_phase=self.training_phase,
+                                       z_vectors=self.z_vectors, dropout_rate=self.dropout_rate,
+                                       dropout_rate_value=self.dropout_rate_value)
 
-                    sample_generator(num_generations=self.num_generations, sess=sess, same_images=self.same_images,
-                                     inputs=x_train_i,
-                                     data=self.data, batch_size=self.batch_size, z_input=self.z_input,
-                                     file_name="{}/train_z_variations_{}_{}.png".format(self.save_image_path,
-                                                                                        self.experiment_name,
-                                                                                        e),
-                                     input_a=self.input_x_i, training_phase=self.training_phase,
-                                     z_vectors=self.z_vectors, dropout_rate=self.dropout_rate,
-                                     dropout_rate_value=self.dropout_rate_value)
+                      sample_two_dimensions_generator(sess=sess,
+                                                      same_images=self.same_images,
+                                                      inputs=x_train_i,
+                                                      data=self.data, batch_size=self.batch_size, z_input=self.z_input,
+                                                      file_name="{}/train_z_spherical_{}_{}".format(self.save_image_path,
+                                                                                                    self.experiment_name,
+                                                                                                    e),
+                                                      input_a=self.input_x_i, training_phase=self.training_phase,
+                                                      dropout_rate=self.dropout_rate,
+                                                      dropout_rate_value=self.dropout_rate_value,
+                                                      z_vectors=self.z_2d_vectors)
 
-                    sample_two_dimensions_generator(sess=sess,
-                                                    same_images=self.same_images,
-                                                    inputs=x_train_i,
-                                                    data=self.data, batch_size=self.batch_size, z_input=self.z_input,
-                                                    file_name="{}/train_z_spherical_{}_{}".format(self.save_image_path,
-                                                                                                  self.experiment_name,
-                                                                                                  e),
-                                                    input_a=self.input_x_i, training_phase=self.training_phase,
-                                                    dropout_rate=self.dropout_rate,
-                                                    dropout_rate_value=self.dropout_rate_value,
-                                                    z_vectors=self.z_2d_vectors)
+                      with tqdm.tqdm(total=self.total_gen_batches) as pbar_samp:
+                          for i in range(self.total_gen_batches):
+                              x_gen_a = self.data.get_gen_batch()
+                              sample_generator(num_generations=self.num_generations, sess=sess,
+                                               same_images=self.same_images,
+                                               inputs=x_gen_a,
+                                               data=self.data, batch_size=self.batch_size, z_input=self.z_input,
+                                               file_name="{}/test_z_variations_{}_{}_{}.png".format(self.save_image_path,
+                                                                                                    self.experiment_name,
+                                                                                                    e, i),
+                                               input_a=self.input_x_i, training_phase=self.training_phase,
+                                               z_vectors=self.z_vectors, dropout_rate=self.dropout_rate,
+                                               dropout_rate_value=self.dropout_rate_value)
 
-                    with tqdm.tqdm(total=self.total_gen_batches) as pbar_samp:
-                        for i in range(self.total_gen_batches):
-                            x_gen_a = self.data.get_gen_batch()
-                            sample_generator(num_generations=self.num_generations, sess=sess,
-                                             same_images=self.same_images,
-                                             inputs=x_gen_a,
-                                             data=self.data, batch_size=self.batch_size, z_input=self.z_input,
-                                             file_name="{}/test_z_variations_{}_{}_{}.png".format(self.save_image_path,
-                                                                                                  self.experiment_name,
-                                                                                                  e, i),
-                                             input_a=self.input_x_i, training_phase=self.training_phase,
-                                             z_vectors=self.z_vectors, dropout_rate=self.dropout_rate,
-                                             dropout_rate_value=self.dropout_rate_value)
+                              sample_two_dimensions_generator(sess=sess,
+                                                              same_images=self.same_images,
+                                                              inputs=x_gen_a,
+                                                              data=self.data, batch_size=self.batch_size,
+                                                              z_input=self.z_input,
+                                                              file_name="{}/val_z_spherical_{}_{}_{}".format(
+                                                                  self.save_image_path,
+                                                                  self.experiment_name,
+                                                                  e, i),
+                                                              input_a=self.input_x_i,
+                                                              training_phase=self.training_phase,
+                                                              dropout_rate=self.dropout_rate,
+                                                              dropout_rate_value=self.dropout_rate_value,
+                                                              z_vectors=self.z_2d_vectors)
 
-                            sample_two_dimensions_generator(sess=sess,
-                                                            same_images=self.same_images,
-                                                            inputs=x_gen_a,
-                                                            data=self.data, batch_size=self.batch_size,
-                                                            z_input=self.z_input,
-                                                            file_name="{}/val_z_spherical_{}_{}_{}".format(
-                                                                self.save_image_path,
-                                                                self.experiment_name,
-                                                                e, i),
-                                                            input_a=self.input_x_i,
-                                                            training_phase=self.training_phase,
-                                                            dropout_rate=self.dropout_rate,
-                                                            dropout_rate_value=self.dropout_rate_value,
-                                                            z_vectors=self.z_2d_vectors)
-
-                            pbar_samp.update(1)
+                              pbar_samp.update(1)
 
                     train_save_path = self.train_saver.save(sess, "{}/train_saved_model_{}_{}.ckpt".format(
                         self.saved_models_filepath,
