@@ -5,7 +5,7 @@ class Bunch(object):
     def __init__(self, adict):
         self.__dict__.update(adict)
 
-def get_args():
+def get_args(dummy=False):
     parser = argparse.ArgumentParser(description='Welcome to GAN-Shot-Learning script')
     parser.add_argument('--batch_size', nargs="?", type=int, default=32, help='batch_size for experiment')
     parser.add_argument('--discriminator_inner_layers', nargs="?", type=int, default=1,
@@ -25,7 +25,7 @@ def get_args():
                              'each epoch')
     parser.add_argument('--use_wide_connections', nargs="?", type=str, default="False",
                         help='Whether to use wide connections in discriminator')
-    args = parser.parse_args()
+    args = parser.parse_args(args=[]) if dummy else parser.parse_args()
     batch_size = args.batch_size
     num_gpus = args.num_of_gpus
 
