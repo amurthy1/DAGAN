@@ -19,6 +19,11 @@ def remove_duplicates(input_features):
         feature_name_set.add(feature.name)
     return non_duplicate_feature_set
 
+def print_vec(vec):
+    for val in vec:
+        print(val)
+    print("\n")
+
 
 class UResNetGenerator:
     def __init__(self, layer_sizes, layer_padding, batch_size, num_channels=1,
@@ -104,26 +109,13 @@ class UResNetGenerator:
         :param dim_reduce: Boolean value indicating if this is a dimensionality reducing layer or not
         :return: The output of the encoder layer
         """
-        [b1, h1, w1, d1] = input.get_shape().as_list()
 
-        if len(layer_to_skip_connect) >= 2:
-            layer_to_skip_connect = layer_to_skip_connect[-2]
-        else:
-            layer_to_skip_connect = None
-
-        if layer_to_skip_connect is not None:
-            [b0, h0, w0, d0] = layer_to_skip_connect.get_shape().as_list()
-            if h0 > h1:
-                skip_connect_layer = self.conv_layer(layer_to_skip_connect, int(layer_to_skip_connect.get_shape()[3]),
-                                                     [3, 3], strides=(2, 2))
-            else:
-                skip_connect_layer = layer_to_skip_connect
-            current_layers = [input, skip_connect_layer]
-        else:
-            current_layers = [input]
-
+        current_layers = [input, layer_to_skip_connect[-2]]
+        # print_vec(current_layers)
         current_layers.extend(local_inner_layers)
+        # print_vec(current_layers)
         current_layers = remove_duplicates(current_layers)
+        # print_vec(current_layers)
         outputs = tf.concat(current_layers, axis=3)
 
         if dim_reduce:
@@ -234,6 +226,10 @@ class UResNetGenerator:
                             current_layers.append(outputs)
                             encoder_inner_layers.append(outputs)
                         else:
+                            skip_connect = current_layers[-2]
+                            current_layers[-2] = self.conv_layer(
+                                skip_connect, int(skip_connect.get_shape()[3]), [3, 3], strides=(2, 2)
+                            )
                             for j in range(self.inner_layers[i]): #Build the inner Layers of the MultiLayer
                                 outputs = self.add_encoder_layer(input=outputs,
                                                                  training=training,
@@ -253,9 +249,13 @@ class UResNetGenerator:
                                                              dim_reduce=True, dropout_rate=dropout_rate)
                             current_layers.append(outputs)
                         encoder_layers.append(outputs)
+                # print(current_layers)
+                    # for l in encoder_inner_layers:
+                    #     print(l)
+                    # print("\n")
 
             g_conv_encoder = outputs
-
+            ret_val = current_layers
             with tf.variable_scope("vector_expansion"):  # Used for expanding the z injected noise to match the
                                                          # dimensionality of the various decoder MultiLayers, injecting
                                                          # noise into multiple decoder layers in a skip-connection way
@@ -364,7 +364,7 @@ class UResNetGenerator:
             print("generator_total_layers", self.conv_layer_num)
             count_parameters(self.variables, name="generator_parameter_num")
         self.build = False
-        return gan_decoder, encoder_layers, decoder_layers
+        return gan_decoder, encoder_layers, decoder_layers, ret_val, conditional_input
 
 
 class Discriminator:
