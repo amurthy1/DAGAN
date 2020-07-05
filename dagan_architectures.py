@@ -55,7 +55,6 @@ class UResNetGenerator:
         :return: Upscaled image
         """
         [b, h, w, c] = [int(dim) for dim in x.get_shape()]
-
         return tf.image.resize_nearest_neighbor(x, (h_size, w_size))
 
     def conv_layer(self, inputs, num_filters, filter_size, strides, activation=None,
@@ -152,6 +151,9 @@ class UResNetGenerator:
         :return: The output of the decoder layer
         """
         [b1, h1, w1, d1] = input.get_shape().as_list()
+        print(input)
+        print("Current Layers")
+        print_vec(layer_to_skip_connect)
         if len(layer_to_skip_connect) >= 2:
             layer_to_skip_connect = layer_to_skip_connect[-2]
         else:
@@ -173,9 +175,11 @@ class UResNetGenerator:
         else:
             current_layers = [input]
 
+        # print_vec(current_layers)
         current_layers.extend(local_inner_layers)
         current_layers = remove_duplicates(current_layers)
         outputs = tf.concat(current_layers, axis=3)
+        print_vec(current_layers)
 
         if dim_upscale:
             outputs = self.conv_layer(outputs, num_features, [3, 3], strides=(1, 1),
@@ -272,12 +276,14 @@ class UResNetGenerator:
                     z_reshape_noise = tf.reshape(z_dense, [self.batch_size, h, w, num_filters])
                     num_filters /= 2
                     num_filters = int(num_filters)
-                    print(z_reshape_noise)
                     z_layers.append(z_reshape_noise)
 
             outputs = g_conv_encoder
             decoder_layers = []
             current_layers = [outputs]
+
+            upscales = []
+            all_inner_layers = []
             with tf.variable_scope('g_deconv_layers'):
                 for i in range(len(self.layer_sizes)+1):
                     if i<3: #Pass the injected noise to the first 3 decoder layers for sharper results
@@ -292,40 +298,30 @@ class UResNetGenerator:
                         inner_layers = self.inner_layers[0]
                         outputs = tf.concat([outputs, conditional_input], axis=3)
                         upscale_shape = conditional_input.get_shape().as_list()
+                    print(i, upscale_shape)
 
                     with tf.variable_scope('g_deconv{}'.format(i)):
                         decoder_inner_layers = [outputs]
                         for j in range(inner_layers):
-                            if i==0 and j==0:
-                                outputs = self.add_decoder_layer(input=outputs,
-                                                                 name="decoder_inner_conv_{}_{}"
-                                                                 .format(i, j),
-                                                                 training=training,
-                                                                 layer_to_skip_connect=current_layers,
-                                                                 num_features=num_features,
-                                                                 dim_upscale=False,
-                                                                 local_inner_layers=decoder_inner_layers,
-                                                                 dropout_rate=dropout_rate)
-                                decoder_inner_layers.append(outputs)
-                            else:
-                                outputs = self.add_decoder_layer(input=outputs,
-                                                                 name="decoder_inner_conv_{}_{}"
-                                                                 .format(i, j), training=training,
-                                                                 layer_to_skip_connect=current_layers,
-                                                                 num_features=num_features,
-                                                                 dim_upscale=False,
-                                                                 local_inner_layers=decoder_inner_layers,
-                                                                 w_size=upscale_shape[1],
-                                                                 h_size=upscale_shape[2],
-                                                                 dropout_rate=dropout_rate)
-                                decoder_inner_layers.append(outputs)
+                            outputs = self.add_decoder_layer(input=outputs,
+                                                             name="decoder_inner_conv_{}_{}"
+                                                             .format(i, j), training=training,
+                                                             layer_to_skip_connect=current_layers,
+                                                             num_features=num_features,
+                                                             dim_upscale=False,
+                                                             local_inner_layers=decoder_inner_layers,
+                                                             w_size=upscale_shape[1],
+                                                             h_size=upscale_shape[2],
+                                                             dropout_rate=dropout_rate)
+                            decoder_inner_layers.append(outputs)
+                        all_inner_layers.extend(decoder_inner_layers)
                         current_layers.append(outputs)
                         decoder_layers.append(outputs)
-
                         if idx>=0:
                             upscale_shape = encoder_layers[idx - 1].get_shape().as_list()
                             if idx == 0:
                                 upscale_shape = conditional_input.get_shape().as_list()
+                            upscales.append(outputs)
                             outputs = self.add_decoder_layer(
                                 input=outputs,
                                 name="decoder_outer_conv_{}".format(i),
@@ -334,6 +330,7 @@ class UResNetGenerator:
                                 num_features=num_features,
                                 dim_upscale=True, local_inner_layers=decoder_inner_layers, w_size=upscale_shape[1],
                                 h_size=upscale_shape[2], dropout_rate=dropout_rate)
+                            upscales.append(outputs)
                             current_layers.append(outputs)
                         if (idx-1)>=0:
                             outputs = tf.concat([outputs, encoder_layers[idx-1]], axis=3)
@@ -364,7 +361,7 @@ class UResNetGenerator:
             print("generator_total_layers", self.conv_layer_num)
             count_parameters(self.variables, name="generator_parameter_num")
         self.build = False
-        return gan_decoder, encoder_layers, decoder_layers, ret_val, conditional_input
+        return gan_decoder, encoder_layers, decoder_layers, ret_val, current_layers, z_layers, upscales
 
 
 class Discriminator:
