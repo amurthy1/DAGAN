@@ -538,4 +538,4 @@ class Discriminator:
             print("discr layers", self.conv_layer_num)
             count_parameters(self.variables, name="discriminator_parameter_num")
         self.build = False
-        return outputs, current_layers, myfun
+        return outputs, current_layers, feature_level_flatten, location_level_flatten, feature_level_dense
