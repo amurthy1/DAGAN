@@ -470,6 +470,7 @@ class Discriminator:
         """
         conditional_input = tf.convert_to_tensor(conditional_input)
         generated_input = tf.convert_to_tensor(generated_input)
+        myfun = []
         with tf.variable_scope(self.name, reuse=self.reuse):
             concat_images = tf.concat([conditional_input, generated_input], axis=3)
             outputs = concat_images
@@ -537,4 +538,4 @@ class Discriminator:
             print("discr layers", self.conv_layer_num)
             count_parameters(self.variables, name="discriminator_parameter_num")
         self.build = False
-        return outputs, current_layers
+        return outputs, current_layers, myfun

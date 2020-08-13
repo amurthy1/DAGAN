@@ -125,6 +125,16 @@ class ExperimentBuilder(object):
                     val_g_loss = []
                     train_d_loss = []
                     val_d_loss = []
+                    x_train_i, x_train_j = self.data.get_train_batch()
+                    sample_generator(num_generations=self.num_generations, sess=sess, same_images=self.same_images,
+                                     inputs=x_train_i,
+                                     data=self.data, batch_size=self.batch_size, z_input=self.z_input,
+                                     file_name="{}/train_z_variations_{}_{}.png".format(self.save_image_path,
+                                                                                        self.experiment_name,
+                                                                                        e),
+                                     input_a=self.input_x_i, training_phase=self.training_phase,
+                                     z_vectors=self.z_vectors, dropout_rate=self.dropout_rate,
+                                     dropout_rate_value=self.dropout_rate_value)
 
                     with tqdm.tqdm(total=self.total_train_batches) as pbar_train:
                         for iter in range(self.total_train_batches):

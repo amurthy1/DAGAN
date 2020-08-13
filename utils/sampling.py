@@ -29,7 +29,6 @@ def sample_generator(num_generations, sess, same_images, inputs, dropout_rate, d
 
 
     input_images, generated = data.reconstruct_original(input_images_list), data.reconstruct_original(generated_list)
-
     input_images = unstack(input_images)
     input_images = np.concatenate((input_images), axis=1)
     input_images = unstack(input_images)
