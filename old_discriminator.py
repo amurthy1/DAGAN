@@ -112,7 +112,7 @@ class TorchDiscriminator(nn.Module):
         
         # Encoders
         self.encode0 = _conv2d(
-            in_channels=self.channels * 2, out_channels=self.layer_sizes[0],
+            in_channels=self.channels, out_channels=self.layer_sizes[0],
             kernel_size=3, stride=2, out_size=self.dim_arr[1]
         )
         for i in range(1, self.depth):
